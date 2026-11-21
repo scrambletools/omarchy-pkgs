@@ -1,0 +1,40 @@
+# Maintainer: Scramble Tools <https://github.com/scrambletools>
+
+pkgname=triib-bin
+_name=triib
+pkgver=1.5.6
+pkgrel=1
+pkgdesc='Discover, connect and set up AVB and Milan devices'
+arch=('x86_64' 'aarch64')
+url='https://triib.run'
+license=('MIT OR Apache-2.0' 'OFL-1.1')
+# triib loads libxkbcommon, Vulkan and Wayland at run time. Its raw
+# sockets come from avb-endpointd's avb-netraw, its own entities run in
+# avb-endpointd, and gptpd keeps their time: each a package of its own,
+# which plaa uses too.
+depends=('alsa-lib' 'avb-endpointd>=0.3.5' 'avb-endpointd<0.4' 'glibc' 'gptpd>=0.2.1'
+         'hicolor-icon-theme' 'libgcc' 'libxkbcommon' 'vulkan-icd-loader' 'wayland')
+provides=("$_name")
+conflicts=("$_name")
+# The release binaries are already stripped; ship them as released.
+options=('!debug' '!strip')
+_release="https://github.com/scrambletoolsllc/triib/releases/download/v$pkgver"
+source_x86_64=("$_release/$_name-$pkgver-x86_64-linux.tar.gz")
+source_aarch64=("$_release/$_name-$pkgver-aarch64-linux.tar.gz")
+noextract=("$_name-$pkgver-x86_64-linux.tar.gz" "$_name-$pkgver-aarch64-linux.tar.gz")
+sha256sums_x86_64=('eb433b377214bcbf1cb840f6f00bdac19274f74633ce39033054cd447047d0ef')
+sha256sums_aarch64=('69113c55c2c220f90b526da04a5f040b34ad4796ad4561cd3e0d7879cd5fe8d1')
+
+package() {
+  # The release tarball is a /usr tree that carries avb-endpointd and
+  # gptpd as well; take triib's own files: the app and triib-cli, the
+  # check its packages run as they install, the desktop entry, icons and
+  # AppStream metadata, its README and licenses, and the model and logo
+  # avb-endpointd shows triib's entities with.
+  bsdtar --no-same-owner -xf "$_name-$pkgver-$CARCH-linux.tar.gz" -C "$pkgdir" \
+    usr/bin/triib usr/bin/triib-cli usr/lib/triib \
+    usr/share/applications usr/share/icons usr/share/metainfo \
+    usr/share/doc/triib usr/share/licenses/triib \
+    usr/share/avb-endpointd/models/triib.toml usr/share/avb-endpointd/models/triib.png
+  mv "$pkgdir/usr/share/licenses/$_name" "$pkgdir/usr/share/licenses/$pkgname"
+}
